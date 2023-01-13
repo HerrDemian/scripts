@@ -42,18 +42,20 @@ if [ $valid_from_epoch -gt $current_time_epoch ] || [ $valid_to_epoch -lt $curre
     exit 1
 fi
 
-# Update the overrides file
-overrides_file=~/hybrid-files/overrides/overrides.yaml
+# Get the current virtual host configuration
+~/apigeectl/apigeectl get virtualhost -o yaml -n $env_group > ~/hybrid-files/overrides/overrides.yaml
 
 # backup the overrides file
-cp $overrides_file $overrides_file.bak
+cp ~/hybrid-files/overrides/overrides.yaml ~/hybrid-files/overrides/overrides.yaml.bak
 
 # update the overrides file
-sed -i "s/certName:.*/certName: $cert_name/g" $overrides_file
-sed -i "s/keyName:.*/keyName: $key_name/g" $overrides_file
+sed -i "s/certName:.*/certName: $cert_name/g" ~/hybrid-files/overrides/overrides.yaml
+sed -i "s/keyName:.*/keyName: $key_name/g" ~/hybrid-files/overrides/overrides.yaml
 
-# Apply the changes
-~/apigeectl/apigeectl apply -f $overrides_file
+# Dry run the changes
+~/apigeectl/apigeectl apply -f ~/hybrid-files/overrides/overrides.yaml -dry-run
 
-echo "Successfully updated the overrides file with new certificates for $env_group"
+# Ask for confirmation
+read -p "Apply the changes? [y/n]: " confirm
+if [ "$confirm" == "y" ];
 
