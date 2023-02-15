@@ -1,0 +1,44 @@
+#!/bin/bash
+
+# Check for required arguments
+if [[ $# -ne 2 ]]; then
+    echo "Usage: $0 <p12_file> <password>"
+    exit 1
+fi
+
+# Assign command line arguments to variables
+p12_file=$1
+password=$2
+
+# Define output file names
+key_file="${p12_file%.*}.key"
+cert_file="${p12_file%.*}.crt"
+chain_file="${p12_file%.*}-chain.crt"
+
+# Check if the p12 file includes keys, client certificate and CA chain
+if openssl pkcs12 -info -in "$p12_file" -passin "pass:$password" | grep -q "friendlyName: .*Key"; then
+    echo "The P12 file includes a key"
+else
+    echo "The P12 file does not include a key"
+fi
+
+if openssl pkcs12 -info -in "$p12_file" -passin "pass:$password" | grep -q "friendlyName: .*Cert"; then
+    echo "The P12 file includes a client certificate"
+else
+    echo "The P12 file does not include a client certificate"
+fi
+
+if openssl pkcs12 -info -in "$p12_file" -passin "pass:$password" | grep -q "friendlyName: .*CA"; then
+    echo "The P12 file includes a CA chain"
+else
+    echo "The P12 file does not include a CA chain"
+fi
+
+# Extract key, client certificate and CA chain to separate files
+openssl pkcs12 -in "$p12_file" -out "$key_file" -nocerts -nodes -passin "pass:$password"
+openssl pkcs12 -in "$p12_file" -out "$cert_file" -nokeys -passin "pass:$password"
+openssl pkcs12 -in "$p12_file" -out "$chain_file" -cacerts -nokeys -chain -passin "pass:$password"
+
+echo "Key file: $key_file"
+echo "Client certificate file: $cert_file"
+echo "CA chain file: $chain_file"
